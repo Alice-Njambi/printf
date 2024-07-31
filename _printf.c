@@ -4,7 +4,7 @@
 
 /**
 * _printf - A simplified printf function that handles %c, %s, %%,
-*           %d, and %i specifiers.
+*           %d, %i, and %b specifiers.
 * @format: The format string.
 * @...: The values to format and print.
 *
@@ -80,6 +80,36 @@ buffer[i++] = '-';
 }
 
 /* Reverse the buffer to get the correct number representation */
+for (j = i - 1; j >= 0; j--)
+{
+write(1, &buffer[j], 1); /* Print each character in the buffer */
+count++; /* Increment count for each character printed */
+}
+}
+break;
+case 'b':
+/* Print an unsigned integer in binary */
+{
+unsigned int num = va_arg(args, unsigned int); /* Extract the unsigned integer argument */
+char buffer[32]; /* Buffer to hold the binary representation */
+int i = 0, j;
+
+/* Handle zero case */
+if (num == 0)
+{
+write(1, "0", 1);
+count++;
+continue;
+}
+
+/* Convert integer to binary */
+while (num > 0)
+{
+buffer[i++] = (num % 2) + '0'; /* Extract last binary digit and convert to character */
+num /= 2; /* Remove last binary digit */
+}
+
+/* Reverse the buffer to get the correct binary representation */
 for (j = i - 1; j >= 0; j--)
 {
 write(1, &buffer[j], 1); /* Print each character in the buffer */
