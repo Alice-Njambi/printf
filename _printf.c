@@ -6,7 +6,7 @@
 #define BUFFER_SIZE 1024
 
 /**
-* _printf - A simplified printf function that handles %c, %s, %, %b, %u, %o, %x, %X, and %S specifiers.
+* _printf - A simplified printf function that handles %c, %s, %, %b, %u, %o, %x, %X, %S, and %p specifiers.
 * @format: The format string.
 * @...: The values to format and print.
 *
@@ -90,7 +90,7 @@ bin[31 - i] = (num & (1 << i)) ? '1' : '0';
 bin[32] = '\0';
 
 for (i = 0; i < 32 && bin[i] == '0'; i++);
-if (buf_index >= BUFFER_SIZE - 1)
+if (buf_index >= BUFFER_SIZE - (32 - i))
 {
 /* Flush buffer if it's full */
 write(1, buffer, buf_index);
@@ -247,8 +247,8 @@ buf_index = 0;
 }
 buffer[buf_index++] = '\\';
 buffer[buf_index++] = 'x';
-buffer[buf_index++] = (*str >> 4) + '0'; /* Upper nibble */
-buffer[buf_index++] = (*str & 0x0F) + '0'; /* Lower nibble */
+buffer[buf_index++] = ((*str >> 4) < 10) ? ((*str >> 4) + '0') : (((*str >> 4) - 10) + 'A');
+buffer[buf_index++] = ((*str & 0x0F) < 10) ? ((*str & 0x0F) + '0') : (((*str & 0x0F) - 10) + 'A');
 }
 else
 {
@@ -263,6 +263,54 @@ buf_index = 0;
 buffer[buf_index++] = *str;
 }
 str++;
+}
+}
+break;
+case 'p':
+/* Print a pointer address */
+{
+void *ptr_val = va_arg(args, void *);
+char str[18]; /* Buffer for pointer address */
+int i = 16;
+
+str[17] = '\0';
+if (!ptr_val)
+{
+str[--i] = '0';
+}
+else
+{
+unsigned long num = (unsigned long)ptr_val;
+while (num > 0)
+{
+int digit = num % 16;
+str[--i] = (digit < 10) ? (digit + '0') : (digit - 10 + 'a');
+num /= 16;
+}
+}
+
+/* Add the "0x" prefix for pointer addresses */
+if (buf_index >= BUFFER_SIZE - 2)
+{
+/* Flush buffer if it's full */
+write(1, buffer, buf_index);
+count += buf_index;
+buf_index = 0;
+}
+buffer[buf_index++] = '0';
+buffer[buf_index++] = 'x';
+
+/* Add the pointer address representation */
+if (buf_index >= BUFFER_SIZE - (16 - i))
+{
+/* Flush buffer if it's full */
+write(1, buffer, buf_index);
+count += buf_index;
+buf_index = 0;
+}
+while (str[i])
+{
+buffer[buf_index++] = str[i++];
 }
 }
 break;
@@ -304,3 +352,4 @@ count += buf_index;
 va_end(args); /* Clean up the argument list */
 return count; /* Return the total number of characters printed */
 }
+
