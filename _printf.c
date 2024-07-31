@@ -4,7 +4,7 @@
 
 /**
 * _printf - A simplified printf function that handles %c, %s, %%,
-*           %d, %i, and %b specifiers.
+*           %d, %i, %b, %u, %o, %x, and %X specifiers.
 * @format: The format string.
 * @...: The values to format and print.
 *
@@ -110,6 +110,95 @@ num /= 2; /* Remove last binary digit */
 }
 
 /* Reverse the buffer to get the correct binary representation */
+for (j = i - 1; j >= 0; j--)
+{
+write(1, &buffer[j], 1); /* Print each character in the buffer */
+count++; /* Increment count for each character printed */
+}
+}
+break;
+case 'u':
+/* Print an unsigned decimal integer */
+{
+unsigned int num = va_arg(args, unsigned int); /* Extract the unsigned integer argument */
+char buffer[10]; /* Buffer to hold the string representation */
+int i = 0, j;
+
+/* Convert integer to string */
+if (num == 0)
+{
+buffer[i++] = '0';
+}
+else
+{
+while (num > 0)
+{
+buffer[i++] = (num % 10) + '0'; /* Extract last digit and convert to character */
+num /= 10; /* Remove last digit from number */
+}
+}
+
+/* Reverse the buffer to get the correct number representation */
+for (j = i - 1; j >= 0; j--)
+{
+write(1, &buffer[j], 1); /* Print each character in the buffer */
+count++; /* Increment count for each character printed */
+}
+}
+break;
+case 'o':
+/* Print an unsigned octal integer */
+{
+unsigned int num = va_arg(args, unsigned int); /* Extract the unsigned integer argument */
+char buffer[11]; /* Buffer to hold the octal representation */
+int i = 0, j;
+
+/* Convert integer to octal */
+if (num == 0)
+{
+buffer[i++] = '0';
+}
+else
+{
+while (num > 0)
+{
+buffer[i++] = (num % 8) + '0'; /* Extract last octal digit and convert to character */
+num /= 8; /* Remove last octal digit */
+}
+}
+
+/* Reverse the buffer to get the correct octal representation */
+for (j = i - 1; j >= 0; j--)
+{
+write(1, &buffer[j], 1); /* Print each character in the buffer */
+count++; /* Increment count for each character printed */
+}
+}
+break;
+case 'x':
+case 'X':
+/* Print an unsigned hexadecimal integer */
+{
+unsigned int num = va_arg(args, unsigned int); /* Extract the unsigned integer argument */
+char buffer[9]; /* Buffer to hold the hexadecimal representation */
+int i = 0, j;
+const char *hex_chars = (*ptr == 'x') ? "0123456789abcdef" : "0123456789ABCDEF";
+
+/* Convert integer to hexadecimal */
+if (num == 0)
+{
+buffer[i++] = '0';
+}
+else
+{
+while (num > 0)
+{
+buffer[i++] = hex_chars[num % 16]; /* Extract last hex digit and convert to character */
+num /= 16; /* Remove last hex digit */
+}
+}
+
+/* Reverse the buffer to get the correct hexadecimal representation */
 for (j = i - 1; j >= 0; j--)
 {
 write(1, &buffer[j], 1); /* Print each character in the buffer */
