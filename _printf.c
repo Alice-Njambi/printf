@@ -1,12 +1,12 @@
 #include "main.h"
 #include <unistd.h>
 #include <stdarg.h>
-#include <string.h>
+#include <stdio.h>
 
 #define BUFFER_SIZE 1024
 
 /**
-* _printf - A simplified printf function that handles various specifiers.
+* _printf - A simplified printf function that handles %c, %s, %, %b, %u, %o, %x, %X, and %S specifiers.
 * @format: The format string.
 * @...: The values to format and print.
 *
@@ -14,11 +14,11 @@
 */
 int _printf(const char *format, ...)
 {
-va_list args; /* Variable argument list */
-char buffer[BUFFER_SIZE]; /* Buffer to accumulate characters */
-int count = 0; /* Total characters printed */
-int buf_index = 0; /* Current index in the buffer */
+va_list args;  /* Variable argument list */
+int count = 0; /* Character count */
 const char *ptr; /* Pointer to traverse the format string */
+char buffer[BUFFER_SIZE]; /* Buffer to store output */
+int buf_index = 0; /* Index for buffer */
 
 va_start(args, format); /* Initialize the argument list */
 
@@ -32,8 +32,9 @@ ptr++; /* Move to the next character to determine the specifier */
 switch (*ptr)
 {
 case 'c':
-{
 /* Print a single character */
+{
+char ch = (char)va_arg(args, int); /* Extract the char argument */
 if (buf_index >= BUFFER_SIZE - 1)
 {
 /* Flush buffer if it's full */
@@ -41,14 +42,14 @@ write(1, buffer, buf_index);
 count += buf_index;
 buf_index = 0;
 }
-buffer[buf_index++] = (char)va_arg(args, int); /* Extract and store the char argument */
-break;
+buffer[buf_index++] = ch; /* Store the character */
 }
+break;
 case 's':
-{
 /* Print a string */
+{
 char *str = va_arg(args, char *); /* Get the string argument */
-while (*str)
+while (*str) /* Loop through each character in the string */
 {
 if (buf_index >= BUFFER_SIZE - 1)
 {
@@ -57,13 +58,14 @@ write(1, buffer, buf_index);
 count += buf_index;
 buf_index = 0;
 }
-buffer[buf_index++] = *str++; /* Store each character from the string */
+buffer[buf_index++] = *str; /* Store the character */
+str++; /* Move to the next character */
+}
 }
 break;
-}
 case '%':
-{
 /* Print a percent sign */
+{
 if (buf_index >= BUFFER_SIZE - 1)
 {
 /* Flush buffer if it's full */
@@ -72,60 +74,22 @@ count += buf_index;
 buf_index = 0;
 }
 buffer[buf_index++] = '%'; /* Store the percent sign */
-break;
-}
-case 'd':
-case 'i':
-{
-/* Print an integer */
-int num = va_arg(args, int); /* Extract the integer argument */
-char num_buffer[12]; /* Buffer to hold the integer string representation */
-int i = 0, j;
-int is_negative = 0;
-
-/* Handle the negative sign */
-if (num < 0)
-{
-is_negative = 1;
-num = -num;
-}
-
-/* Convert integer to string */
-do {
-num_buffer[i++] = (num % 10) + '0'; /* Extract last digit */
-num /= 10; /* Remove last digit */
-} while (num > 0);
-
-/* Add the negative sign if needed */
-if (is_negative)
-{
-num_buffer[i++] = '-';
-}
-
-/* Reverse the buffer and store in the main buffer */
-for (j = i - 1; j >= 0; j--)
-{
-if (buf_index >= BUFFER_SIZE - 1)
-{
-/* Flush buffer if it's full */
-write(1, buffer, buf_index);
-count += buf_index;
-buf_index = 0;
-}
-buffer[buf_index++] = num_buffer[j];
 }
 break;
-}
 case 'b':
+/* Print an unsigned int in binary */
 {
-/* Print an unsigned integer in binary */
-unsigned int num = va_arg(args, unsigned int); /* Extract the unsigned integer argument */
-char num_buffer[33]; /* Buffer to hold the binary representation */
-int i = 0, j;
+unsigned int num = va_arg(args, unsigned int);
+char bin[33]; /* Buffer for binary representation */
+int i;
 
-/* Handle zero case */
-if (num == 0)
+for (i = 0; i < 32; i++)
 {
+bin[31 - i] = (num & (1 << i)) ? '1' : '0';
+}
+bin[32] = '\0';
+
+for (i = 0; i < 32 && bin[i] == '0'; i++);
 if (buf_index >= BUFFER_SIZE - 1)
 {
 /* Flush buffer if it's full */
@@ -133,161 +97,176 @@ write(1, buffer, buf_index);
 count += buf_index;
 buf_index = 0;
 }
-buffer[buf_index++] = '0';
-}
-else
+while (bin[i]) /* Skip leading zeros */
 {
-while (num > 0)
-{
-num_buffer[i++] = (num % 2) + '0'; /* Extract last binary digit */
-num /= 2; /* Remove last binary digit */
-}
-
-/* Reverse the buffer and store in the main buffer */
-for (j = i - 1; j >= 0; j--)
-{
-if (buf_index >= BUFFER_SIZE - 1)
-{
-/* Flush buffer if it's full */
-write(1, buffer, buf_index);
-count += buf_index;
-buf_index = 0;
-}
-buffer[buf_index++] = num_buffer[j];
+buffer[buf_index++] = bin[i++];
 }
 }
 break;
-}
 case 'u':
+/* Print an unsigned integer */
 {
-/* Print an unsigned decimal integer */
-unsigned int num = va_arg(args, unsigned int); /* Extract the unsigned integer argument */
-char num_buffer[11]; /* Buffer to hold the decimal representation */
-int i = 0, j;
+unsigned int num = va_arg(args, unsigned int);
+char str[11]; /* Buffer for decimal representation */
+int i = 10;
 
-/* Convert integer to string */
+str[10] = '\0';
 if (num == 0)
 {
-if (buf_index >= BUFFER_SIZE - 1)
-{
-/* Flush buffer if it's full */
-write(1, buffer, buf_index);
-count += buf_index;
-buf_index = 0;
+str[--i] = '0';
 }
-buffer[buf_index++] = '0';
-}
-else
-{
 while (num > 0)
 {
-num_buffer[i++] = (num % 10) + '0'; /* Extract last digit */
-num /= 10; /* Remove last digit */
+str[--i] = (num % 10) + '0';
+num /= 10;
 }
 
-/* Reverse the buffer and store in the main buffer */
-for (j = i - 1; j >= 0; j--)
-{
-if (buf_index >= BUFFER_SIZE - 1)
+if (buf_index >= BUFFER_SIZE - (10 - i))
 {
 /* Flush buffer if it's full */
 write(1, buffer, buf_index);
 count += buf_index;
 buf_index = 0;
 }
-buffer[buf_index++] = num_buffer[j];
+while (str[i])
+{
+buffer[buf_index++] = str[i++];
 }
 }
 break;
-}
 case 'o':
+/* Print an unsigned integer in octal */
 {
-/* Print an unsigned octal integer */
-unsigned int num = va_arg(args, unsigned int); /* Extract the unsigned integer argument */
-char num_buffer[11]; /* Buffer to hold the octal representation */
-int i = 0, j;
+unsigned int num = va_arg(args, unsigned int);
+char str[11]; /* Buffer for octal representation */
+int i = 10;
 
-/* Convert integer to octal */
+str[10] = '\0';
 if (num == 0)
 {
-if (buf_index >= BUFFER_SIZE - 1)
-{
-/* Flush buffer if it's full */
-write(1, buffer, buf_index);
-count += buf_index;
-buf_index = 0;
+str[--i] = '0';
 }
-buffer[buf_index++] = '0';
-}
-else
-{
 while (num > 0)
 {
-num_buffer[i++] = (num % 8) + '0'; /* Extract last octal digit */
-num /= 8; /* Remove last octal digit */
+str[--i] = (num % 8) + '0';
+num /= 8;
 }
 
-/* Reverse the buffer and store in the main buffer */
-for (j = i - 1; j >= 0; j--)
-{
-if (buf_index >= BUFFER_SIZE - 1)
+if (buf_index >= BUFFER_SIZE - (10 - i))
 {
 /* Flush buffer if it's full */
 write(1, buffer, buf_index);
 count += buf_index;
 buf_index = 0;
 }
-buffer[buf_index++] = num_buffer[j];
+while (str[i])
+{
+buffer[buf_index++] = str[i++];
 }
 }
 break;
-}
 case 'x':
-case 'X':
+/* Print an unsigned integer in hexadecimal (lowercase) */
 {
-/* Print an unsigned hexadecimal integer */
-unsigned int num = va_arg(args, unsigned int); /* Extract the unsigned integer argument */
-char num_buffer[9]; /* Buffer to hold the hexadecimal representation */
-int i = 0, j;
-const char *hex_chars = (*ptr == 'x') ? "0123456789abcdef" : "0123456789ABCDEF";
+unsigned int num = va_arg(args, unsigned int);
+char str[9]; /* Buffer for hexadecimal representation */
+int i = 8;
 
-/* Convert integer to hexadecimal */
+str[8] = '\0';
 if (num == 0)
 {
-if (buf_index >= BUFFER_SIZE - 1)
-{
-/* Flush buffer if it's full */
-write(1, buffer, buf_index);
-count += buf_index;
-buf_index = 0;
+str[--i] = '0';
 }
-buffer[buf_index++] = '0';
-}
-else
-{
 while (num > 0)
 {
-num_buffer[i++] = hex_chars[num % 16]; /* Extract last hex digit */
-num /= 16; /* Remove last hex digit */
+int digit = num % 16;
+str[--i] = (digit < 10) ? (digit + '0') : (digit - 10 + 'a');
+num /= 16;
 }
 
-/* Reverse the buffer and store in the main buffer */
-for (j = i - 1; j >= 0; j--)
-{
-if (buf_index >= BUFFER_SIZE - 1)
+if (buf_index >= BUFFER_SIZE - (8 - i))
 {
 /* Flush buffer if it's full */
 write(1, buffer, buf_index);
 count += buf_index;
 buf_index = 0;
 }
-buffer[buf_index++] = num_buffer[j];
+while (str[i])
+{
+buffer[buf_index++] = str[i++];
 }
 }
 break;
-}
-default:
+case 'X':
+/* Print an unsigned integer in hexadecimal (uppercase) */
 {
+unsigned int num = va_arg(args, unsigned int);
+char str[9]; /* Buffer for hexadecimal representation */
+int i = 8;
+
+str[8] = '\0';
+if (num == 0)
+{
+str[--i] = '0';
+}
+while (num > 0)
+{
+int digit = num % 16;
+str[--i] = (digit < 10) ? (digit + '0') : (digit - 10 + 'A');
+num /= 16;
+}
+
+if (buf_index >= BUFFER_SIZE - (8 - i))
+{
+/* Flush buffer if it's full */
+write(1, buffer, buf_index);
+count += buf_index;
+buf_index = 0;
+}
+while (str[i])
+{
+buffer[buf_index++] = str[i++];
+}
+}
+break;
+case 'S':
+/* Print a string with non-printable characters encoded */
+{
+char *str = va_arg(args, char *);
+while (*str)
+{
+if (*str < 32 || *str >= 127)
+{
+/* Handle non-printable characters */
+if (buf_index >= BUFFER_SIZE - 4)
+{
+/* Flush buffer if it's full */
+write(1, buffer, buf_index);
+count += buf_index;
+buf_index = 0;
+}
+buffer[buf_index++] = '\\';
+buffer[buf_index++] = 'x';
+buffer[buf_index++] = (*str >> 4) + '0'; /* Upper nibble */
+buffer[buf_index++] = (*str & 0x0F) + '0'; /* Lower nibble */
+}
+else
+{
+/* Handle printable characters */
+if (buf_index >= BUFFER_SIZE - 1)
+{
+/* Flush buffer if it's full */
+write(1, buffer, buf_index);
+count += buf_index;
+buf_index = 0;
+}
+buffer[buf_index++] = *str;
+}
+str++;
+}
+}
+break;
+default:
 /* Handle unknown format specifiers */
 if (buf_index >= BUFFER_SIZE - 2)
 {
@@ -301,7 +280,6 @@ buffer[buf_index++] = *ptr; /* Store the unknown specifier */
 break;
 }
 }
-}
 else
 {
 /* Handle regular characters */
@@ -312,11 +290,11 @@ write(1, buffer, buf_index);
 count += buf_index;
 buf_index = 0;
 }
-buffer[buf_index++] = *ptr; /* Store the regular character */
+buffer[buf_index++] = *ptr; /* Store the character */
 }
 }
 
-/* Flush any remaining characters in the buffer */
+/* Flush remaining characters in buffer */
 if (buf_index > 0)
 {
 write(1, buffer, buf_index);
@@ -326,4 +304,3 @@ count += buf_index;
 va_end(args); /* Clean up the argument list */
 return count; /* Return the total number of characters printed */
 }
-
