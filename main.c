@@ -55,10 +55,6 @@ _printf("Percent:[%%]\n"); /* Test with percent sign */
 len = _printf("Len:[%d]\n", len); /* Print length returned by _printf */
 len2 = printf("Len:[%d]\n", len2); /* Print length returned by printf */
 
-/* Removed unknown format specifier test */
-/* _printf("Unknown:[%r]\n"); */
-/* printf("Unknown:[%r]\n"); */
-
 return (0); /* Return success code */
 }
 
